@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEV-Diffusion Gallery</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  
+  <header class="header">
+    <h1><span class="logo">◇</span> Gallery</h1>
+    <p class="tagline">Pre-rendered JEV-Diffusion examples. Click any to see the cell lineage.</p>
+    <div class="nav">
+      <a href="index.html">← Studio</a>
+      <a href="docs.html">Docs</a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Examples</h2>
+      <p>Each example below was rendered with the full JEV-Diffusion pipeline. Click to see:</p>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-bottom: 2rem;">
+        <li>The full prev_hash chain</li>
+        <li>Each cell's LLM render</li>
+        <li>The critic's iterations</li>
+        <li>The unified description</li>
+      </ul>
+      
+      <div id="gallery-full" class="gallery-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>JEV-Diffusion is part of the <a href="https://github.com/SuperInstance/cargo-line-tycoon">cargo-line-tycoon</a> substrate.</p>
+  </footer>
+
+  <script>
+    // Fetch all examples
+    const examples = [
+      { target: 'A serene sunset over a mountain lake with a small wooden cabin reflected in the still water', preset: 'landscape', file: 'mountain-sunset.json' },
+      { target: 'A lone figure in a hooded cloak stands at the edge of a frozen lake under a sky full of stars', preset: 'landscape', file: 'hooded-figure.json' },
+      { target: 'A weathered sailor holds a letter aboard a creaking ship at golden hour', preset: 'portrait', file: 'sailor.json' },
+      { target: 'Floating crystalline structures hover above a sulfurous alien sea at twilight', preset: 'sci_fi', file: 'crystal-structures.json' },
+      { target: 'A forgotten teacup on a rain-streaked window sill, soft afternoon light', preset: 'still_life', file: 'teacup.json' },
+      { target: 'Bold geometric forms cascading through a void of pure color, intersecting like crashing waves', preset: 'abstract', file: 'geometric-abstraction.json' },
+    ];
+    
+    const gallery = document.getElementById('gallery-full');
+    
+    examples.forEach((ex, i) => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.innerHTML = `
+        <div class="gallery-target">${ex.target}</div>
+        <div class="gallery-score">preset: ${ex.preset}</div>
+        <div class="gallery-preview">Loading from examples/${ex.file}...</div>
+      `;
+      
+      // Fetch the JSON
+      fetch(`../examples/${ex.file}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            const score = data.final_score || 0;
+            const preview = data.combined || data.cells?.[0]?.llm_render?.substring(0, 300) || 'No description';
+            item.querySelector('.gallery-score').textContent = `★ ${score.toFixed(1)}/10`;
+            item.querySelector('.gallery-preview').textContent = preview;
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+              window.location.href = `index.html?target=${encodeURIComponent(ex.target)}&preset=${ex.preset}`;
+            });
+          } else {
+            item.querySelector('.gallery-preview').textContent = 'Example not yet rendered. Run `python3 jev_diffusion.py` to generate.';
+          }
+        })
+        .catch(() => {
+          item.querySelector('.gallery-preview').textContent = 'Example not yet rendered.';
+        });
+      
+      gallery.appendChild(item);
+    });
+  </script>
+</body>
+</html>

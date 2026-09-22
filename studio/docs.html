@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEV-Diffusion Documentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  
+  <header class="header">
+    <h1>JEV-Diffusion <span class="logo">◇</span></h1>
+    <p class="tagline">Substrate-segmented image description. The cell is the irreducible unit. The model is the renderer.</p>
+    <div class="nav">
+      <a href="index.html">← Studio</a>
+      <a href="#doctrine">Doctrine</a>
+      <a href="#cell">Cell</a>
+      <a href="#presets">Presets</a>
+      <a href="#composite">Composite JEV</a>
+      <a href="#critic">Critic Loop</a>
+      <a href="#extensions">Extensions</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="doctrine">
+      <h2>The Doctrine</h2>
+      <p>JEV-Diffusion is a method for generating rich image descriptions using substrate segmentation and LLM-as-GAN. It produces no actual images — it produces <em>descriptions</em> that could be fed to any image generator (Stable Diffusion, DALL-E, Midjourney).</p>
+      
+      <h3>Why description, not image?</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-bottom: 1rem;">
+        <li><strong>Observable</strong>: every cell has a hash, every iteration is logged</li>
+        <li><strong>Composable</strong>: cells chain via prev_hash, can be shared</li>
+        <li><strong>Editable</strong>: edit any cell, the rest survives (no-deletion)</li>
+        <li><strong>Cheap</strong>: runs on $0.10 of LLM tokens vs $5 of GPU</li>
+        <li><strong>Iterative</strong>: GAN-like critic loop refines quality</li>
+      </ul>
+      
+      <h3>The 5 stages</h3>
+      <ol style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li><strong>JEV Plans</strong> — schema-constrained decisions on regions, mood, palette, lighting</li>
+        <li><strong>Substrate Segments</strong> — image becomes a graph of cells</li>
+        <li><strong>LLMs Render</strong> — each cell gets a 3-5 sentence description</li>
+        <li><strong>Critic Iterates</strong> — multi-dimension scoring, refine until quality threshold</li>
+        <li><strong>Unify</strong> — DeepSeek assembles cells into 4-6 sentence description</li>
+      </ol>
+    </section>
+
+    <section id="cell" style="margin-top: 3rem;">
+      <h2>The Cell</h2>
+      <p>Each cell in the substrate is an irreducible unit with its own identity. The cell carries:</p>
+      <pre><code>{
+  "cell_id": "cell-02",
+  "region": "midground",
+  "position": [2, 0],
+  "prev_hash": "0x45af13f2542f834b",
+  "hash": "0xc898e7e814b8e650",
+  "jev_decision": {},
+  "llm_render": "A solitary figure wrapped in a tattered, deep indigo cloak...",
+  "critic_score": 9.5,
+  "metadata": {
+    "preset": "landscape",
+    "backend": "qwen",
+    "rendered_at": 1790063203.586021
+  }
+}</code></pre>
+      <p>The cell has its own hash, its own decision history, and links to its parent via <code>prev_hash</code>. This is the substrate cell doctrine in operational form.</p>
+    </section>
+
+    <section id="presets" style="margin-top: 3rem;">
+      <h2>Presets</h2>
+      <p>Presets define canonical region layouts for different image types:</p>
+      
+      <h3>landscape</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li>sky (region 0)</li>
+        <li>horizon (region 1)</li>
+        <li>midground (region 2)</li>
+        <li>foreground (region 3)</li>
+      </ul>
+      
+      <h3>portrait</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li>background, head, shoulders, hands, accent</li>
+      </ul>
+      
+      <h3>abstract</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li>4 free-floating compositions</li>
+      </ul>
+      
+      <h3>still_life</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li>background, tabletop, primary_object, secondary_object, accent</li>
+      </ul>
+      
+      <h3>sci_fi</h3>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li>environment, structure, vessel, lighting, particle</li>
+      </ul>
+    </section>
+
+    <section id="composite" style="margin-top: 3rem;">
+      <h2>Composite JEV</h2>
+      <p>When <code>use_composite_jev=True</code>, the system uses multiple models to vote on JEV's plan:</p>
+      <pre><code># JEV's primary answer
+jev_ans = jev.plan(target, questions)
+
+# Other models vote
+votes = {qwen: ..., deepseek: ...}
+
+# Use the agreed-upon answer
+final = agreement(jev_ans, votes)</code></pre>
+      <p>This adds robustness. JEV is schema-constrained (can't hallucinate), but composite voting ensures the answer isn't an outlier.</p>
+      <p>Tradeoff: ~3x slower (extra model calls) but more reliable.</p>
+    </section>
+
+    <section id="critic" style="margin-top: 3rem;">
+      <h2>Critic Loop</h2>
+      <p>The critic scores the combined cell descriptions on 4 dimensions:</p>
+      <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <li><strong>completeness</strong> (0-10): Does it cover all aspects of the target?</li>
+        <li><strong>specificity</strong> (0-10): Is it vivid and concrete?</li>
+        <li><strong>coherence</strong> (0-10): Do cells connect smoothly?</li>
+        <li><strong>composition</strong> (0-10): Strong visual composition?</li>
+      </ul>
+      <p>If average ≥ 9.0, the loop stops early. Otherwise, it iterates up to N times.</p>
+      
+      <h3>GAN-like behavior</h3>
+      <p>JEV-Diffusion is GAN-like in that there's a generator (cell renderers) and a discriminator (critic). Unlike a true GAN, both are LLMs and there's no gradient. But the loop has the same shape: generate, evaluate, refine.</p>
+    </section>
+
+    <section id="extensions" style="margin-top: 3rem;">
+      <h2>Extensions</h2>
+      <p>JEV-Diffusion is a primitive that composes with other substrate doctrines:</p>
+      
+      <h3>Cross-paradigm mitosis (text_diffusion)</h3>
+      <p>Each cell can be a mitosis root. When the description is &gt;1500 tokens, the cell divides into 2 daughters with prev_hash → parent.</p>
+      
+      <h3>Motif agents (motif_quilt)</h3>
+      <p>cell-explorer can find similar past diffusions. cell-reviewer can audit quality. cell-tester can verify hashes.</p>
+      
+      <h3>Composite JEV (composite_jev)</h3>
+      <p>The critic itself can be a composite — multiple models vote on whether to continue.</p>
+      
+      <h3>Wavefunction JEV (composite_jev_v2)</h3>
+      <p>Each cell is a measurement of a quantum substrate. Critics compute Bell-state interference.</p>
+      
+      <h3>Substrate canon</h3>
+      <p>Every diffusion run creates cells in the substrate worker. They're queryable, traceable, and composable with other cells.</p>
+    </section>
+
+    <section style="margin-top: 3rem; text-align: center;">
+      <a href="index.html" style="display: inline-block; padding: 0.8rem 2rem; background: var(--accent); color: white; border-radius: 6px; text-decoration: none;">← Back to Studio</a>
+    </section>
+  </main>
+
+  <footer>
+    <p>JEV-Diffusion is part of the <a href="https://github.com/SuperInstance/cargo-line-tycoon">cargo-line-tycoon</a> substrate. <span class="hash">canary: 0x24a555471370b18d</span></p>
+  </footer>
+</body>
+</html>

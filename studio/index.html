@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEV-Diffusion Studio — Substrate-Segmented Image Description</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  
+  <header class="header">
+    <h1><span class="logo">◇</span> JEV-Diffusion Studio</h1>
+    <p class="tagline">Substrate-segmented image description. No actual image generator. Just JEV + LLMs as a GAN.</p>
+    <div class="nav">
+      <a href="#studio">Studio</a>
+      <a href="#how">How it Works</a>
+      <a href="#gallery">Gallery</a>
+      <a href="#api">API</a>
+      <a href="docs.html">Docs</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============== STUDIO ============== -->
+    <section id="studio" class="studio">
+      <h2>The Studio</h2>
+      <p class="lead">Type a target. Watch JEV plan it. See cells get rendered by alternating LLMs. Iterate via GAN-like critic.</p>
+      
+      <div class="studio-grid">
+        <!-- Input column -->
+        <div class="panel input-panel">
+          <h3>1. Target</h3>
+          <textarea id="target" rows="3" placeholder="A serene sunset over a mountain lake with a small wooden cabin reflected in the still water">A serene sunset over a mountain lake with a small wooden cabin reflected in the still water</textarea>
+          
+          <h3>2. Preset</h3>
+          <select id="preset">
+            <option value="landscape">Landscape (sky, horizon, midground, foreground)</option>
+            <option value="portrait">Portrait (background, head, shoulders, hands, accent)</option>
+            <option value="abstract">Abstract (4 compositions)</option>
+            <option value="still_life">Still Life (background, tabletop, primary, secondary, accent)</option>
+            <option value="sci_fi">Sci-Fi (environment, structure, vessel, lighting, particle)</option>
+          </select>
+          
+          <h3>3. Iterations</h3>
+          <input type="range" id="iterations" min="1" max="5" value="3">
+          <span id="iterations-value">3</span>
+          
+          <h3>4. Composite JEV</h3>
+          <label><input type="checkbox" id="composite" checked> Enable multi-model voting</label>
+          <p class="hint">Slower but more robust — JEV + Qwen + DeepSeek must agree</p>
+          
+          <button id="run" class="run-button">▶ Run Diffusion</button>
+        </div>
+        
+        <!-- Output column -->
+        <div class="panel output-panel">
+          <h3>Live Substrate</h3>
+          <div id="status" class="status">Ready. Click Run Diffusion to start.</div>
+          
+          <div id="plan-display" class="plan-display hidden">
+            <h4>JEV Plan</h4>
+            <div class="plan-grid">
+              <div><strong>Regions:</strong> <span id="plan-regions">—</span></div>
+              <div><strong>Mood:</strong> <span id="plan-mood">—</span></div>
+              <div><strong>Palette:</strong> <span id="plan-palette">—</span></div>
+              <div><strong>Lighting:</strong> <span id="plan-lighting">—</span></div>
+            </div>
+          </div>
+          
+          <div id="cells-display" class="cells-display">
+            <!-- Cells will be appended here as they're rendered -->
+          </div>
+          
+          <div id="critic-display" class="critic-display hidden">
+            <h4>Critic Loop</h4>
+            <div id="critic-scores"></div>
+          </div>
+          
+          <div id="final-display" class="final-display hidden">
+            <h4>Unified Description</h4>
+            <div id="final-text"></div>
+            <div class="final-actions">
+              <button id="copy">📋 Copy</button>
+              <button id="share">🔗 Share</button>
+              <button id="export">💾 Export JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== HOW IT WORKS ============== -->
+    <section id="how" class="how">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>JEV Plans</h3>
+          <p>JEV (Joint Embedding Validator) makes schema-constrained decisions about regions, mood, palette, and lighting. With composite-JEV enabled, Qwen + DeepSeek also vote.</p>
+          <pre><code>{
+  "regions": "sky",
+  "mood": "serene",
+  "palette": "warm",
+  "lighting": 1.0
+}</code></pre>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Substrate Segments</h3>
+          <p>The image is decomposed into substrate cells based on the preset. Each cell is a node with <code>cell_id</code>, <code>region</code>, <code>prev_hash</code>.</p>
+          <pre><code>cell-00: sky
+  prev_hash: 0x0000000000000000
+cell-01: horizon
+  prev_hash: 0x8e1c57a40ce4ec80
+cell-02: midground
+  prev_hash: 0x45af13f2542f834b</code></pre>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>LLMs Render</h3>
+          <p>Each cell is rendered by an LLM (Qwen for even, DeepSeek for odd, or routed by composite-JEV). The LLM sees the plan, its neighbors, and the target.</p>
+          <pre><code>[Qwen renders cell-00 sky]
+"deep celestial vault awash in cool indigo..."</code></pre>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Critic Iterates</h3>
+          <p>A GAN-like critic scores the combined result on completeness, specificity, coherence, and composition. High scores stop the loop; low scores trigger another iteration.</p>
+          <pre><code>{
+  "completeness": 9.5,
+  "specificity": 9.0,
+  "coherence": 9.5,
+  "composition": 9.0
+}</code></pre>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Unify</h3>
+          <p>DeepSeek assembles the cells into a single 4-6 sentence description. This is the final output — a refined text description that could be passed to any image generator.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== GALLERY ============== -->
+    <section id="gallery" class="gallery">
+      <h2>Gallery</h2>
+      <p>Examples rendered with the full pipeline. Click any to see the cell lineage.</p>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ============== API ============== -->
+    <section id="api" class="api">
+      <h2>API</h2>
+      <p>You can run this from the command line or via HTTP. Both work without any setup beyond API keys.</p>
+      <h3>CLI</h3>
+      <pre><code>python3 jev_diffusion.py "your target" --preset landscape --iterations 3</code></pre>
+      <h3>Python</h3>
+      <pre><code>from jev_diffusion import JevDiffusion
+d = JevDiffusion(target="...", preset="landscape", iterations=3)
+result = d.run()
+print(result['combined'])</code></pre>
+      <h3>HTTP (coming soon)</h3>
+      <pre><code>POST /api/diffuse
+{
+  "target": "...",
+  "preset": "landscape",
+  "iterations": 3
+}</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>JEV-Diffusion is part of the <a href="https://github.com/SuperInstance/cargo-line-tycoon">cargo-line-tycoon</a> substrate. <span class="hash">canary: 0x24a555471370b18d</span></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
